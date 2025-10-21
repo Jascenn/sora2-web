@@ -196,28 +196,13 @@ docker-compose -f docker-compose.prod.yml up -d
 - `SORA_API_KEY`: Sora API 密钥
 - `NEXT_PUBLIC_API_URL`: 前端 API 地址
 
-## 文档
+## 📋 重要文件
 
-### 📖 新手入门
-- 🌱 [Git分支管理小白指南](./docs/GIT_FOR_BEGINNERS.md) - 零基础学Git分支管理
-- 🌳 [分支管理策略](./docs/BRANCH_STRATEGY.md) - 详细的分支使用规范
-
-### 📋 项目文档
-- 📖 [详细设置指南](./SETUP.md) - 完整的项目设置说明
-- 📋 [产品需求文档](./docs/PRD.md) - 项目需求和功能说明
 - ⚙️ [环境变量配置](./.env.example) - 环境变量模板
 - 🐳 [Docker 配置](./docker-compose.yml) - Docker 编排配置
 
 ### API 文档
-
 - 📡 API 接口文档: http://localhost:3001/api-docs（启动服务后访问）
-
-## 开发环境归档
-
-以下开发相关文件已归档（不影响正常使用）：
-- 测试文件和测试配置
-- 开发脚本
-- 临时报告文档
 
 ## License
 
