@@ -1,0 +1,34 @@
+{
+  "name": "sora2-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Third-party Sora2 video generation platform",
+  "scripts": {
+    "dev": "pnpm --parallel dev",
+    "build": "pnpm --recursive build",
+    "clean": "pnpm --recursive clean",
+    "test": "pnpm --recursive test",
+    "test:coverage": "pnpm --recursive test:coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:all": "pnpm test && pnpm test:e2e"
+  },
+  "keywords": [
+    "sora",
+    "ai",
+    "video",
+    "generation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@10.18.2+sha512.9fb969fa749b3ade6035e0f109f0b8a60b5d08a1a87fdf72e337da90dcc93336e2280ca4e44f2358a649b83c17959e9993e777c2080879f3801e6f0d999ad3dd",
+  "devDependencies": {
+    "@playwright/test": "^1.56.1"
+  }
+}

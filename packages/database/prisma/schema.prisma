@@ -1,0 +1,159 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum UserStatus {
+  active
+  banned
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  phone        String?  @unique
+  passwordHash String   @map("password_hash")
+  nickname     String
+  avatarUrl    String?  @map("avatar_url")
+  credits      Int      @default(0)
+  role         UserRole @default(user)
+  status       UserStatus @default(active)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  videos       Video[]
+  transactions CreditTransaction[]
+  orders       Order[]
+  templates    Template[]
+
+  @@map("users")
+}
+
+enum VideoStatus {
+  pending
+  processing
+  completed
+  failed
+}
+
+model Video {
+  id             String      @id @default(uuid())
+  userId         String      @map("user_id")
+  prompt         String      @db.Text
+  negativePrompt String?     @map("negative_prompt") @db.Text
+  duration       Int
+  resolution     String
+  aspectRatio    String      @map("aspect_ratio")
+  style          String?
+  fps            Int
+  status         VideoStatus @default(pending)
+  fileUrl        String?     @map("file_url")
+  thumbnailUrl   String?     @map("thumbnail_url")
+  fileSize       BigInt?     @map("file_size")
+  costCredits    Int         @map("cost_credits")
+  openaiTaskId   String?     @map("openai_task_id")
+  errorMessage   String?     @map("error_message") @db.Text
+  createdAt      DateTime    @default(now()) @map("created_at")
+  completedAt    DateTime?   @map("completed_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  // Composite index for optimized list queries with filters
+  @@index([userId, status, createdAt(sort: Desc)])
+  @@map("videos")
+}
+
+enum TransactionType {
+  recharge
+  consume
+  gift
+  refund
+}
+
+model CreditTransaction {
+  id           String          @id @default(uuid())
+  userId       String          @map("user_id")
+  type         TransactionType
+  amount       Int
+  balanceAfter Int             @map("balance_after")
+  relatedId    String?         @map("related_id")
+  description  String
+  createdAt    DateTime        @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  // Composite index for optimized transaction history queries
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("credit_transactions")
+}
+
+enum PaymentMethod {
+  wechat
+  alipay
+  stripe
+  paypal
+}
+
+enum OrderStatus {
+  pending
+  paid
+  failed
+  refunded
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  userId        String        @map("user_id")
+  orderNo       String        @unique @map("order_no")
+  amount        Decimal       @db.Decimal(10, 2)
+  credits       Int
+  paymentMethod PaymentMethod @map("payment_method")
+  status        OrderStatus   @default(pending)
+  paidAt        DateTime?     @map("paid_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([orderNo])
+  @@index([status])
+  // Composite index for optimized order list queries with filters
+  @@index([userId, status, createdAt(sort: Desc)])
+  @@map("orders")
+}
+
+model Template {
+  id           String   @id @default(uuid())
+  userId       String?  @map("user_id")
+  name         String
+  description  String   @db.Text
+  prompt       String   @db.Text
+  config       Json
+  thumbnailUrl String?  @map("thumbnail_url")
+  isPublic     Boolean  @default(false) @map("is_public")
+  usageCount   Int      @default(0) @map("usage_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([isPublic])
+  @@map("templates")
+}
