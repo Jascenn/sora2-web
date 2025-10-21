@@ -1,0 +1,5 @@
+{
+  "version": 2,
+  "buildCommand": "pnpm build",
+  "framework": "nextjs"
+}
