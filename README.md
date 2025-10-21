@@ -198,6 +198,11 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ## 文档
 
+### 📖 新手入门
+- 🌱 [Git分支管理小白指南](./docs/GIT_FOR_BEGINNERS.md) - 零基础学Git分支管理
+- 🌳 [分支管理策略](./docs/BRANCH_STRATEGY.md) - 详细的分支使用规范
+
+### 📋 项目文档
 - 📖 [详细设置指南](./SETUP.md) - 完整的项目设置说明
 - 📋 [产品需求文档](./docs/PRD.md) - 项目需求和功能说明
 - ⚙️ [环境变量配置](./.env.example) - 环境变量模板
