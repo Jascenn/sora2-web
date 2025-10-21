@@ -9,7 +9,7 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3101',
   },
   // Enable standalone output for optimized Docker builds
-  output: 'standalone',
+  output: process.env.DOCKER_BUILD === 'true' ? 'standalone' : undefined,
 
   // PWA Configuration
   // Service Worker is handled via public/sw.js and registered in layout.tsx
