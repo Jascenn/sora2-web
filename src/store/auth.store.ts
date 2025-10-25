@@ -23,6 +23,7 @@ interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
+  _hasHydrated: boolean
 }
 
 interface AuthActions {
@@ -31,6 +32,7 @@ interface AuthActions {
   logout: () => void
   setLoading: (loading: boolean) => void
   refreshUser: () => Promise<void>
+  setHasHydrated: (state: boolean) => void
 }
 
 type AuthStore = AuthState & AuthActions
@@ -118,6 +120,7 @@ export const useAuthStore = create<AuthStore>()(
       } : null,
       isAuthenticated: BYPASS_LOGIN ? true : false,
       isLoading: false,
+      _hasHydrated: false,
 
       // Actions
       setUser: (user) =>
@@ -152,6 +155,11 @@ export const useAuthStore = create<AuthStore>()(
           isLoading: loading,
         }),
 
+      setHasHydrated: (state) =>
+        set({
+          _hasHydrated: state,
+        }),
+
       refreshUser: async () => {
         try {
           const response = await authApi.getProfile()
@@ -177,13 +185,10 @@ export const useAuthStore = create<AuthStore>()(
 
       // Rehydrate: Only restore authentication status, fetch fresh user data
       onRehydrateStorage: () => (state) => {
-        if (state?.isAuthenticated) {
-          // Refresh user data from server on app load
-          state.refreshUser()
-        } else {
-          if (state) {
-            state.isLoading = false
-          }
+        if (state) {
+          // Mark hydration as complete
+          state._hasHydrated = true
+          state.isLoading = false
         }
       },
 

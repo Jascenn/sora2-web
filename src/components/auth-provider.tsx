@@ -12,7 +12,7 @@ const BYPASS_LOGIN = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
 const publicRoutes = ["/", "/login", "/register", "/gallery", "/terms", "/privacy", "/forgot-password"]
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, setUser, setLoading, isLoading } = useAuthStore()
+  const { user, isAuthenticated, setUser, setLoading, isLoading, _hasHydrated } = useAuthStore()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -23,10 +23,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    // CRITICAL: Wait for zustand to finish hydrating from localStorage
+    if (!_hasHydrated) {
+      console.log('[AuthProvider] Waiting for state hydration...')
+      return
+    }
+
     const checkUser = async () => {
       // If we already have user from login, don't check again immediately
       if (isAuthenticated && user) {
-        console.log('[AuthProvider] User already set from login:', user.email)
+        console.log('[AuthProvider] User already set:', user.email)
         setLoading(false)
         return
       }
@@ -58,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     checkUser()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [_hasHydrated])
 
   useEffect(() => {
     // Skip auth checks in development mode
