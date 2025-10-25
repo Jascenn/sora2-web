@@ -5,6 +5,13 @@ node_modules/
 
 # Testing
 coverage/
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+jest.config.js
+jest.setup.js
 
 # Next.js
 .next/
@@ -59,3 +66,39 @@ apps/api/node_modules/
 *.tmp
 *.temp
 .cache/
+
+# Documentation & Scripts (keep only README.md)
+docs/
+API_*.md
+AUTH_*.md
+ARCHITECTURE.md
+CONTRIBUTING.md
+DEPLOYMENT_GUIDE.md
+DEVELOPMENT.md
+FIX_*.txt
+FIX_*.md
+QUICK_*.md
+START_HERE_*.md
+SYNC_*.md
+TESTING.md
+
+# Debug & Test Files
+debug-*.html
+test-*.html
+website-test-report.html
+mock-*.js
+
+# Utility Scripts
+clean-and-start.sh
+diagnose.sh
+start-dev.sh
+deploy-to-vercel.sh
+
+# Backup Files
+*.backup
+*.dev.js
+
+# Backend & Standalone (not needed for frontend deployment)
+apps/
+packages/
+sora2-simple-standalone/
