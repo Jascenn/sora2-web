@@ -31,14 +31,15 @@ export function useLogin() {
 
       toast.success('登录成功')
 
-      // Immediately redirect - don't set user state, let AuthProvider fetch it
+      // Cookie is set by server, middleware will handle routing based on role
+      // Just navigate to trigger middleware check
       const targetPath = response.user.role === 'admin' ? '/admin' : '/generate'
       console.log('[Login] Redirecting to:', targetPath)
 
-      // Direct redirect without delay - Cookie is already set by server
+      // Use full page reload to ensure middleware runs
       window.location.href = targetPath
     },
-    onError: (error: any) => {
+    onError: (error: any) {
       const message = error.response?.data?.error || '登录失败，请检查邮箱和密码'
       toast.error(message)
     },
