@@ -27,37 +27,15 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // For all public routes, just allow access
+  if (isPublicRoute(pathname)) {
+    return NextResponse.next()
+  }
+
   // Get token from cookie
   const token = request.cookies.get('token')?.value
 
   console.log('[Middleware]', pathname, 'has token:', !!token)
-
-  // Special handling for login page
-  if (pathname === '/login' || pathname === '/register') {
-    // If has valid token, redirect away from login/register
-    if (token) {
-      try {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key')
-        const { payload } = await jwtVerify(token, secret)
-
-        console.log('[Middleware] User already logged in, redirecting from auth page')
-        const url = request.nextUrl.clone()
-        url.pathname = payload.role === 'admin' ? '/admin' : '/generate'
-        return NextResponse.redirect(url)
-      } catch {
-        // Invalid token, allow access to login page
-        console.log('[Middleware] Invalid token on auth page, allowing access')
-        return NextResponse.next()
-      }
-    }
-    // No token, allow access to login/register
-    return NextResponse.next()
-  }
-
-  // For all other routes, check if it's public
-  if (isPublicRoute(pathname)) {
-    return NextResponse.next()
-  }
 
   // Protected route - require valid token
   if (!token) {
