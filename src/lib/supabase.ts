@@ -91,8 +91,24 @@ export function getSupabaseClient() {
 }
 
 /**
- * Database types - generated from Supabase
+ * Database types - optimized schema
  */
+
+// Enum types
+export type UserRole = 'user' | 'admin' | 'moderator'
+export type UserStatus = 'active' | 'inactive' | 'banned' | 'pending_verification'
+export type VideoStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'
+export type TransactionType =
+  | 'signup_bonus'
+  | 'purchase'
+  | 'video_generation'
+  | 'refund'
+  | 'admin_grant'
+  | 'admin_deduct'
+  | 'referral_bonus'
+export type PaymentMethod = 'alipay' | 'wechat' | 'stripe' | 'paypal' | 'balance'
+export type OrderStatus = 'pending' | 'processing' | 'paid' | 'failed' | 'refunded' | 'cancelled'
+
 export type Database = {
   public: {
     Tables: {
@@ -100,41 +116,62 @@ export type Database = {
         Row: {
           id: string
           email: string
+          email_verified: boolean
           phone: string | null
+          phone_verified: boolean
           password_hash: string
           nickname: string
           avatar_url: string | null
+          bio: string | null
           credits: number
-          role: string
-          status: string
+          role: UserRole
+          status: UserStatus
+          video_count: number
+          total_spent_credits: number
+          last_login_at: string | null
           created_at: string
           updated_at: string
+          deleted_at: string | null
         }
         Insert: {
           id?: string
           email: string
+          email_verified?: boolean
           phone?: string | null
+          phone_verified?: boolean
           password_hash: string
           nickname: string
           avatar_url?: string | null
+          bio?: string | null
           credits?: number
-          role?: string
-          status?: string
+          role?: UserRole
+          status?: UserStatus
+          video_count?: number
+          total_spent_credits?: number
+          last_login_at?: string | null
           created_at?: string
           updated_at?: string
+          deleted_at?: string | null
         }
         Update: {
           id?: string
           email?: string
+          email_verified?: boolean
           phone?: string | null
+          phone_verified?: boolean
           password_hash?: string
           nickname?: string
           avatar_url?: string | null
+          bio?: string | null
           credits?: number
-          role?: string
-          status?: string
+          role?: UserRole
+          status?: UserStatus
+          video_count?: number
+          total_spent_credits?: number
+          last_login_at?: string | null
           created_at?: string
           updated_at?: string
+          deleted_at?: string | null
         }
       }
       videos: {
@@ -148,16 +185,21 @@ export type Database = {
           aspect_ratio: string
           style: string | null
           fps: number
-          status: string
+          status: VideoStatus
           file_url: string | null
           thumbnail_url: string | null
           file_size: number | null
           cost_credits: number
           openai_task_id: string | null
           error_message: string | null
-          created_at: string
+          error_code: string | null
+          metadata: Record<string, any>
+          started_at: string | null
           completed_at: string | null
+          failed_at: string | null
+          created_at: string
           updated_at: string
+          deleted_at: string | null
         }
         Insert: {
           id?: string
@@ -169,16 +211,21 @@ export type Database = {
           aspect_ratio: string
           style?: string | null
           fps: number
-          status?: string
+          status?: VideoStatus
           file_url?: string | null
           thumbnail_url?: string | null
           file_size?: number | null
           cost_credits: number
           openai_task_id?: string | null
           error_message?: string | null
-          created_at?: string
+          error_code?: string | null
+          metadata?: Record<string, any>
+          started_at?: string | null
           completed_at?: string | null
+          failed_at?: string | null
+          created_at?: string
           updated_at?: string
+          deleted_at?: string | null
         }
         Update: {
           id?: string
@@ -190,47 +237,61 @@ export type Database = {
           aspect_ratio?: string
           style?: string | null
           fps?: number
-          status?: string
+          status?: VideoStatus
           file_url?: string | null
           thumbnail_url?: string | null
           file_size?: number | null
           cost_credits?: number
           openai_task_id?: string | null
           error_message?: string | null
-          created_at?: string
+          error_code?: string | null
+          metadata?: Record<string, any>
+          started_at?: string | null
           completed_at?: string | null
+          failed_at?: string | null
+          created_at?: string
           updated_at?: string
+          deleted_at?: string | null
         }
       }
       credit_transactions: {
         Row: {
           id: string
           user_id: string
-          type: string
+          type: TransactionType
           amount: number
+          balance_before: number
           balance_after: number
           related_id: string | null
+          related_type: string | null
           description: string
+          notes: string | null
           created_at: string
         }
         Insert: {
           id?: string
           user_id: string
-          type: string
+          type: TransactionType
           amount: number
+          balance_before: number
           balance_after: number
           related_id?: string | null
+          related_type?: string | null
           description: string
+          notes?: string | null
           created_at?: string
         }
         Update: {
           id?: string
           user_id?: string
-          type?: string
+          type?: TransactionType
           amount?: number
+          balance_before?: number
           balance_after?: number
           related_id?: string | null
+          related_type?: string | null
           description?: string
+          notes?: string | null
           created_at?: string
         }
       }
@@ -241,10 +302,17 @@ export type Database = {
           order_no: string
           amount: number
           credits: number
-          payment_method: string
-          status: string
+          payment_method: PaymentMethod
+          payment_transaction_id: string | null
+          payment_details: Record<string, any>
+          status: OrderStatus
+          discount_amount: number
+          discount_code: string | null
           paid_at: string | null
+          refunded_at: string | null
+          cancelled_at: string | null
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -252,10 +320,17 @@ export type Database = {
           order_no: string
           amount: number
           credits: number
-          payment_method: string
-          status?: string
+          payment_method: PaymentMethod
+          payment_transaction_id?: string | null
+          payment_details?: Record<string, any>
+          status?: OrderStatus
+          discount_amount?: number
+          discount_code?: string | null
           paid_at?: string | null
+          refunded_at?: string | null
+          cancelled_at?: string | null
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -263,10 +338,17 @@ export type Database = {
           order_no?: string
           amount?: number
           credits?: number
-          payment_method?: string
-          status?: string
+          payment_method?: PaymentMethod
+          payment_transaction_id?: string | null
+          payment_details?: Record<string, any>
+          status?: OrderStatus
+          discount_amount?: number
+          discount_code?: string | null
           paid_at?: string | null
+          refunded_at?: string | null
+          cancelled_at?: string | null
           created_at?: string
+          updated_at?: string
         }
       }
     }
