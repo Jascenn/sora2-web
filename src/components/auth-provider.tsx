@@ -63,8 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // Skip auth checks while loading
-    if (isLoading) {
+    // CRITICAL: Don't do ANY checks until hydration and initial auth check complete
+    if (!_hasHydrated || isLoading) {
+      console.log('[AuthProvider] Waiting for initial auth check to complete')
       return
     }
 
@@ -77,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated,
       pathname,
       user: user?.email,
-      isLoading
+      role: user?.role
     })
 
     // Don't redirect on login/register pages - let login flow handle it
@@ -99,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       router.replace("/generate")
       return
     }
-  }, [isLoading, isAuthenticated, user, pathname, router])
+  }, [_hasHydrated, isLoading, isAuthenticated, user, pathname, router])
 
 
   // Show loading while hydrating or checking auth
