@@ -29,17 +29,20 @@ export function useLogin() {
     onSuccess: async (response) => {
       console.log('[Login] Success response:', response)
 
-      // Update auth store FIRST
+      // Update auth store
       setUser(response.user as User)
+
+      // Clear query cache
+      queryClient.clear()
 
       toast.success('登录成功')
 
-      // Force page reload to let AuthProvider pick up the new state
+      // Redirect based on user role
       const targetPath = response.user.role === 'admin' ? '/admin' : '/generate'
       console.log('[Login] Redirecting to', targetPath)
 
-      // Use window.location to force a full page reload with cookies
-      window.location.href = targetPath
+      // Use router.replace to avoid adding to history
+      router.replace(targetPath)
     },
     onError: (error: any) => {
       const message = error.response?.data?.error || '登录失败，请检查邮箱和密码'

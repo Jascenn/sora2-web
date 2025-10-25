@@ -59,38 +59,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isLoading) {
       const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))
       const isLoginPage = pathname === "/login"
+      const isRegisterPage = pathname === "/register"
       const isAdminRoute = pathname.startsWith("/admin")
 
       console.log('[AuthProvider] Auth check:', {
         isAuthenticated,
-        isLoginPage,
-        isPublicRoute,
         pathname,
         user: user?.email
       })
 
-      // If authenticated and on login page, redirect to appropriate page
-      if (isAuthenticated && isLoginPage) {
-        console.log('[AuthProvider] User authenticated on login page, redirecting...')
-        if (user?.role === 'admin') {
-          router.push("/admin")
-        } else {
-          router.push("/generate")
-        }
-        return
-      }
-
       // If not authenticated and not on a public route, redirect to login
       if (!isAuthenticated && !isPublicRoute) {
         console.log('[AuthProvider] Not authenticated, redirecting to login')
-        router.push("/login")
+        router.replace("/login")
         return
       }
 
       // If authenticated but not an admin and trying to access admin route, redirect
       if (isAuthenticated && user?.role !== 'admin' && isAdminRoute) {
         console.log('[AuthProvider] Non-admin user trying to access admin route')
-        router.push("/generate")
+        router.replace("/generate")
+        return
+      }
+
+      // If authenticated and on login/register page, redirect (but let login hook handle immediate redirect)
+      if (isAuthenticated && (isLoginPage || isRegisterPage)) {
+        console.log('[AuthProvider] User authenticated on login/register page, redirecting...')
+        const targetPath = user?.role === 'admin' ? '/admin' : '/generate'
+        router.replace(targetPath)
+        return
       }
     }
   }, [isLoading, isAuthenticated, user, pathname, router])
