@@ -27,28 +27,52 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Allow public routes
+  // Get token from cookie
+  const token = request.cookies.get('token')?.value
+
+  console.log('[Middleware]', pathname, 'has token:', !!token)
+
+  // Special handling for login page
+  if (pathname === '/login' || pathname === '/register') {
+    // If has valid token, redirect away from login/register
+    if (token) {
+      try {
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key')
+        const { payload } = await jwtVerify(token, secret)
+
+        console.log('[Middleware] User already logged in, redirecting from auth page')
+        const url = request.nextUrl.clone()
+        url.pathname = payload.role === 'admin' ? '/admin' : '/generate'
+        return NextResponse.redirect(url)
+      } catch {
+        // Invalid token, allow access to login page
+        console.log('[Middleware] Invalid token on auth page, allowing access')
+        return NextResponse.next()
+      }
+    }
+    // No token, allow access to login/register
+    return NextResponse.next()
+  }
+
+  // For all other routes, check if it's public
   if (isPublicRoute(pathname)) {
     return NextResponse.next()
   }
 
-  // Get token from cookie
-  const token = request.cookies.get('token')?.value
-
-  // No token - redirect to login
+  // Protected route - require valid token
   if (!token) {
-    console.log('[Middleware] No token found, redirecting to /login')
+    console.log('[Middleware] No token for protected route, redirecting to /login')
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Verify token
+  // Verify token for protected routes
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key-min-32-characters-long!')
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-key')
     const { payload } = await jwtVerify(token, secret)
 
-    console.log('[Middleware] Token verified, user:', payload.email, 'role:', payload.role)
+    console.log('[Middleware] Token verified for', pathname, 'user:', payload.email, 'role:', payload.role)
 
     // Check admin routes
     if (pathname.startsWith('/admin') && payload.role !== 'admin') {
@@ -58,18 +82,10 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    // If on login page but already authenticated, redirect to appropriate page
-    if (pathname === '/login') {
-      console.log('[Middleware] Already authenticated, redirecting from login')
-      const url = request.nextUrl.clone()
-      url.pathname = payload.role === 'admin' ? '/admin' : '/generate'
-      return NextResponse.redirect(url)
-    }
-
     // Token valid, allow request
     return NextResponse.next()
   } catch (error) {
-    console.log('[Middleware] Token verification failed:', error)
+    console.log('[Middleware] Token verification failed for', pathname, error)
     // Invalid token - redirect to login
     const url = request.nextUrl.clone()
     url.pathname = '/login'
