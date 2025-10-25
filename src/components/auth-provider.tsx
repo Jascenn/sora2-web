@@ -30,33 +30,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const checkUser = async () => {
-      // If we already have user from login, don't check again immediately
-      if (isAuthenticated && user) {
-        console.log('[AuthProvider] User already set:', user.email)
-        setLoading(false)
-        return
-      }
-
       setLoading(true)
 
       try {
-        // Check with server using the httpOnly cookie
+        // ALWAYS check with server using the httpOnly cookie - don't trust local state
         const response = await authApi.getProfile()
         console.log('[AuthProvider] Profile check response:', response)
 
         if (response && response.user) {
-          console.log('[AuthProvider] Setting user:', response.user.email)
+          console.log('[AuthProvider] Setting user:', response.user.email, 'role:', response.user.role)
           setUser(response.user)
         } else {
-          console.log('[AuthProvider] No user found')
+          console.log('[AuthProvider] No user found, clearing state')
           setUser(null)
         }
       } catch (error: any) {
-        console.log('[AuthProvider] Profile check failed:', error?.response?.status)
-        // Only clear user if it's actually a 401
-        if (error?.response?.status === 401) {
-          setUser(null)
-        }
+        console.log('[AuthProvider] Profile check failed, status:', error?.response?.status)
+        // Clear user state on any error
+        setUser(null)
       } finally {
         setLoading(false)
       }

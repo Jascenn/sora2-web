@@ -27,21 +27,16 @@ export function useLogin() {
   return useMutation({
     mutationFn: (data: LoginData) => authApi.login(data),
     onSuccess: async (response) => {
-      console.log('[Login] Success response:', response)
-
-      // Update auth store
-      setUser(response.user as User)
+      console.log('[Login] Success, user:', response.user.email, 'role:', response.user.role)
 
       toast.success('登录成功')
 
-      // Force redirect using window.location to ensure clean navigation
+      // Immediately redirect - don't set user state, let AuthProvider fetch it
       const targetPath = response.user.role === 'admin' ? '/admin' : '/generate'
-      console.log('[Login] Force redirecting to:', targetPath)
+      console.log('[Login] Redirecting to:', targetPath)
 
-      // Small delay to ensure state is saved
-      setTimeout(() => {
-        window.location.href = targetPath
-      }, 100)
+      // Direct redirect without delay - Cookie is already set by server
+      window.location.href = targetPath
     },
     onError: (error: any) => {
       const message = error.response?.data?.error || '登录失败，请检查邮箱和密码'
