@@ -26,7 +26,9 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: (data: LoginData) => authApi.login(data),
-    onSuccess: (response) => {
+    onSuccess: async (response) => {
+      console.log('[Login] Success response:', response)
+
       // Update auth store
       setUser(response.user as User)
 
@@ -35,12 +37,23 @@ export function useLogin() {
 
       toast.success('登录成功')
 
-      // Redirect based on user role
-      if (response.user.role === 'admin') {
-        router.push('/admin')
-      } else {
-        router.push('/generate')
-      }
+      // Small delay to ensure state updates propagate
+      setTimeout(() => {
+        // Redirect based on user role
+        const targetPath = response.user.role === 'admin' ? '/admin' : '/generate'
+        console.log('[Login] Redirecting to', targetPath)
+
+        // Try router.push first
+        router.push(targetPath)
+
+        // Fallback to window.location if router doesn't work
+        setTimeout(() => {
+          if (window.location.pathname === '/login') {
+            console.log('[Login] Router.push failed, using window.location')
+            window.location.href = targetPath
+          }
+        }, 500)
+      }, 100)
     },
     onError: (error: any) => {
       const message = error.response?.data?.error || '登录失败，请检查邮箱和密码'

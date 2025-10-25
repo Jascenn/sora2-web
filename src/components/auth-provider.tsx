@@ -72,8 +72,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isLoginPage = pathname === "/login"
       const isAdminRoute = pathname.startsWith("/admin")
 
+      console.log('[AuthProvider] Auth check:', {
+        isAuthenticated,
+        isLoginPage,
+        isPublicRoute,
+        pathname,
+        user: user?.email
+      })
+
       // If authenticated and on login page, redirect to appropriate page
       if (isAuthenticated && isLoginPage) {
+        console.log('[AuthProvider] User authenticated on login page, redirecting...')
         if (user?.role === 'admin') {
           router.push("/admin")
         } else {
@@ -84,12 +93,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // If not authenticated and not on a public route, redirect to login
       if (!isAuthenticated && !isPublicRoute) {
+        console.log('[AuthProvider] Not authenticated, redirecting to login')
         router.push("/login")
         return
       }
 
       // If authenticated but not an admin and trying to access admin route, redirect
       if (isAuthenticated && user?.role !== 'admin' && isAdminRoute) {
+        console.log('[AuthProvider] Non-admin user trying to access admin route')
         router.push("/generate")
       }
     }

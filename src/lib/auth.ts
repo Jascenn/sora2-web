@@ -60,7 +60,9 @@ export async function logout(): Promise<void> {
 
 export const authApi = {
   async login(data: LoginData): Promise<AuthResponse> {
+    console.log('[authApi] Sending login request')
     const response = await api.post("/auth/login", data)
+    console.log('[authApi] Login response:', response.data)
     return response.data.data // Extract data from success wrapper
   },
 

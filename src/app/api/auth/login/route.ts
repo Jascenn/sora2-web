@@ -86,10 +86,11 @@ export async function POST(request: NextRequest) {
     )
 
     // Set cookie with token
+    // Important: For Vercel deployment, we need proper cookie settings
     response.cookies.set('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Always use secure in production (Vercel uses HTTPS)
+      sameSite: 'strict', // Strict for same-site requests
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     })
