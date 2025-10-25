@@ -24,10 +24,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const checkUser = async () => {
+      // If we already have user from login, don't check again immediately
+      if (isAuthenticated && user) {
+        console.log('[AuthProvider] User already set from login:', user.email)
+        setLoading(false)
+        return
+      }
+
       setLoading(true)
 
       try {
-        // Always check with server using the httpOnly cookie
+        // Check with server using the httpOnly cookie
         const response = await authApi.getProfile()
         console.log('[AuthProvider] Profile check response:', response)
 
@@ -35,19 +42,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('[AuthProvider] Setting user:', response.user.email)
           setUser(response.user)
         } else {
-          console.log('[AuthProvider] No user found, logging out')
+          console.log('[AuthProvider] No user found')
           setUser(null)
         }
-      } catch (error) {
-        console.log('[AuthProvider] Profile check failed, not authenticated:', error)
-        // Error fetching profile, means we are not authenticated
-        setUser(null)
+      } catch (error: any) {
+        console.log('[AuthProvider] Profile check failed:', error?.response?.status)
+        // Only clear user if it's actually a 401
+        if (error?.response?.status === 401) {
+          setUser(null)
+        }
       } finally {
         setLoading(false)
       }
     }
 
     checkUser()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {

@@ -29,20 +29,13 @@ export function useLogin() {
     onSuccess: async (response) => {
       console.log('[Login] Success response:', response)
 
-      // Update auth store
+      // Update auth store - this will trigger AuthProvider to redirect
       setUser(response.user as User)
-
-      // Clear query cache
-      queryClient.clear()
 
       toast.success('登录成功')
 
-      // Redirect based on user role
-      const targetPath = response.user.role === 'admin' ? '/admin' : '/generate'
-      console.log('[Login] Redirecting to', targetPath)
-
-      // Use router.replace to avoid adding to history
-      router.replace(targetPath)
+      // Don't redirect here - let AuthProvider handle it after state updates
+      console.log('[Login] User state updated, AuthProvider will handle redirect')
     },
     onError: (error: any) => {
       const message = error.response?.data?.error || '登录失败，请检查邮箱和密码'
