@@ -17,6 +17,7 @@ interface PersistedAuthData {
   userId?: string
   nickname?: string
   avatarUrl?: string
+  role?: string  // CRITICAL: Must persist role to prevent redirect loops
 }
 
 interface AuthState {
@@ -56,9 +57,9 @@ const secureStorage = {
             id: data.userId,
             nickname: data.nickname,
             avatarUrl: data.avatarUrl,
-            email: '', // Will be filled by refreshUser
-            credits: 0, // Will be filled by refreshUser
-            role: 'user', // Will be filled by refreshUser
+            email: '', // Will be filled by API call
+            credits: 0, // Will be filled by API call
+            role: data.role || 'user', // CRITICAL: Restore role from storage
           },
           isLoading: false,
         } as AuthState)
@@ -84,6 +85,7 @@ const secureStorage = {
           userId: fullData.user.id,
           nickname: fullData.user.nickname,
           avatarUrl: fullData.user.avatarUrl,
+          role: fullData.user.role,  // CRITICAL: Must save role
         }
 
         window.localStorage.setItem(name, JSON.stringify(secureData))
