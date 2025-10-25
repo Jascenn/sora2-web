@@ -1,0 +1,61 @@
+name: 分支保护检查
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-branch-protection:
+    name: 检查分支保护规则
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 检查目标分支
+      run: |
+        TARGET_BRANCH="${{ github.base_ref }}"
+
+        # 检查是否直接向 main 分支提交
+        if [ "$TARGET_BRANCH" = "main" ]; then
+          echo "⚠️ 警告：直接向 main 分支提交 PR"
+          echo "建议先创建 develop 分支进行开发，然后合并到 main"
+        fi
+
+    - name: 检查提交信息
+      run: |
+        # 获取最近的提交信息
+        COMMITS=$(git log --format="%h %s" ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+
+        echo "最近的提交："
+        echo "$COMMITS"
+
+        # 检查提交信息格式
+        while read -r commit; do
+          if [ -n "$commit" ]; then
+            echo "检查提交: $commit"
+            # 简单的提交信息格式检查
+            if [[ ! "$commit" =~ ^(feat|fix|docs|style|refactor|test|chore)(\(.+\))?: .+ ]]; then
+              echo "⚠️ 提交信息格式不规范，建议使用 Conventional Commits 格式"
+              echo "格式: type(scope): description"
+              echo "例如: feat(component): 添加新功能"
+              break
+            fi
+          fi
+        done <<< "$COMMITS"
+
+    - name: 检查文件大小
+      run: |
+        # 检查是否有大文件被添加
+        LARGE_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} | \
+          xargs -I {} sh -c 'if [ -f "{}" ] && [ $(stat -f%z "{}" 2>/dev/null || stat -c%s "{}" 2>/dev/null || echo 0) -gt 1048576 ]; then echo "{}"; fi')
+
+        if [ -n "$LARGE_FILES" ]; then
+          echo "⚠️ 发现大文件（> 1MB）："
+          echo "$LARGE_FILES"
+          echo "请考虑使用 Git LFS 或避免提交大文件"
+        fi

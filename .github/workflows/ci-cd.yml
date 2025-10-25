@@ -1,0 +1,155 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # 代码质量检查
+  lint-and-test:
+    name: 代码质量检查
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 安装依赖
+      run: npm ci
+
+    - name: 代码检查 (ESLint)
+      run: npm run lint
+
+    - name: 运行测试
+      run: npm run test:ci
+
+    - name: 测试覆盖率报告
+      run: npm run test:coverage
+
+    - name: 上传测试覆盖率报告
+      uses: codecov/codecov-action@v3
+      if: github.event_name == 'push'
+      with:
+        file: ./coverage/lcov.info
+        fail_ci_if_error: false
+
+  # 构建检查
+  build:
+    name: 构建检查
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 安装依赖
+      run: npm ci
+
+    - name: 构建项目
+      run: npm run build
+
+    - name: 分析构建包大小
+      run: npm run build:analyze
+      if: github.event_name == 'pull_request'
+
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-files
+        path: .next/
+        retention-days: 1
+
+  # 类型检查
+  type-check:
+    name: TypeScript 类型检查
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 安装依赖
+      run: npm ci
+
+    - name: TypeScript 类型检查
+      run: npx tsc --noEmit
+
+  # 安全检查
+  security-audit:
+    name: 安全审计
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 安装依赖
+      run: npm ci
+
+    - name: 安全审计
+      run: npm audit --audit-level moderate
+      continue-on-error: true
+
+  # PR 检查（仅在 PR 时运行）
+  pr-check:
+    name: PR 检查
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 检查 PR 描述
+      run: |
+        PR_BODY=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.number }} | \
+          jq -r '.body')
+
+        if [ "$PR_BODY" = "null" ] || [ -z "$PR_BODY" ]; then
+          echo "请添加 PR 描述"
+          exit 1
+        fi
+
+        # 检查是否包含必要的部分
+        if ! echo "$PR_BODY" | grep -q "## 变更内容"; then
+          echo "PR 描述必须包含 '## 变更内容' 部分"
+          exit 1
+        fi
+
+        if ! echo "$PR_BODY" | grep -q "## 测试"; then
+          echo "PR 描述必须包含 '## 测试' 部分"
+          exit 1
+        fi

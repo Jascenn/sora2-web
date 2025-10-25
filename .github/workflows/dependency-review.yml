@@ -1,0 +1,27 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+
+    - name: 依赖审查
+      uses: actions/dependency-review-action@v3
+      with:
+        fail-on-severity: moderate
+
+    - name: 检查过时的依赖
+      run: |
+        npm outdated || true
+
+    - name: 安全审计
+      run: |
+        npm audit --audit-level moderate

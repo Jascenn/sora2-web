@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网络状态检测 - Sora2</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .online {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .offline {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .fix-btn {
+            background: #28a745;
+        }
+        .fix-btn:hover {
+            background: #1e7e34;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sora2 - 网络状态诊断工具</h1>
+
+        <div id="status" class="status">
+            检测中...
+        </div>
+
+        <h2>网络信息</h2>
+        <pre id="networkInfo"></pre>
+
+        <h2>操作</h2>
+        <button onclick="checkStatus()">刷新状态</button>
+        <button onclick="testConnection()">测试连接</button>
+        <button onclick="clearServiceWorkers()" class="fix-btn">清除 Service Workers</button>
+        <button onclick="clearCache()" class="fix-btn">清除缓存</button>
+        <button onclick="goToApp()" class="fix-btn">进入应用</button>
+
+        <h2>解决方案</h2>
+        <p>如果您看到"离线"状态，请尝试以下步骤：</p>
+        <ol>
+            <li>点击"清除 Service Workers"按钮</li>
+            <li>点击"清除缓存"按钮</li>
+            <li>刷新页面</li>
+            <li>检查网络连接</li>
+            <li>如果仍有问题，请在开发者工具中禁用离线模式</li>
+        </ol>
+
+        <h2>开发者工具提示</h2>
+        <p>打开浏览器开发者工具 (F12)，检查：</p>
+        <ul>
+            <li>Network 标签页：确保 "Offline" 选项未被勾选</li>
+            <li>Application 标签页：检查 Service Workers 状态</li>
+            <li>Console 标签页：查看是否有错误信息</li>
+        </ul>
+    </div>
+
+    <script>
+        function updateStatus() {
+            const isOnline = navigator.onLine;
+            const statusDiv = document.getElementById('status');
+            const networkInfo = document.getElementById('networkInfo');
+
+            statusDiv.className = `status ${isOnline ? 'online' : 'offline'}`;
+            statusDiv.textContent = isOnline ? '✅ 在线状态' : '❌ 离线状态';
+
+            const info = {
+                navigatorOnLine: navigator.onLine,
+                connection: navigator.connection ? {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt
+                } : 'Not supported',
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                cookieEnabled: navigator.cookieEnabled,
+                serviceWorker: 'serviceWorker' in navigator
+            };
+
+            networkInfo.textContent = JSON.stringify(info, null, 2);
+        }
+
+        function checkStatus() {
+            updateStatus();
+            console.log('Current status:', navigator.onLine ? 'Online' : 'Offline');
+        }
+
+        async function testConnection() {
+            try {
+                const response = await fetch('http://localhost:3200/api/health', {
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                const status = response.ok ? '✅ 连接成功' : '❌ 连接失败';
+                alert(status + '\nStatus: ' + response.status);
+            } catch (error) {
+                alert('❌ 连接失败\nError: ' + error.message);
+            }
+        }
+
+        async function clearServiceWorkers() {
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (let registration of registrations) {
+                    await registration.unregister();
+                    console.log('Service Worker unregistered:', registration.scope);
+                }
+                alert('✅ Service Workers 已清除\n请刷新页面');
+            } else {
+                alert('❌ 当前浏览器不支持 Service Workers');
+            }
+        }
+
+        async function clearCache() {
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                console.log('All caches cleared');
+                alert('✅ 缓存已清除\n请刷新页面');
+            } else {
+                alert('❌ 当前浏览器不支持 Cache API');
+            }
+        }
+
+        function goToApp() {
+            // 清除可能的离线重定向
+            localStorage.removeItem('offline-redirect');
+            sessionStorage.removeItem('offline-redirect');
+            window.location.href = 'http://localhost:3200';
+        }
+
+        // 监听网络状态变化
+        window.addEventListener('online', () => {
+            console.log('Back online!');
+            updateStatus();
+        });
+
+        window.addEventListener('offline', () => {
+            console.log('Gone offline!');
+            updateStatus();
+        });
+
+        // 页面加载时检查状态
+        updateStatus();
+
+        // 每5秒自动检查一次
+        setInterval(updateStatus, 5000);
+
+        // 尝试检测并修复自动离线重定向问题
+        if (window.location.pathname === '/offline') {
+            console.warn('检测到您在离线页面，正在尝试修复...');
+            setTimeout(() => {
+                if (navigator.onLine) {
+                    console.log('网络正常，正在重定向到首页...');
+                    goToApp();
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

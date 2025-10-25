@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/jascen/Development/00_Pay_Project/**)",
+      "Bash(git ls-tree:*)",
+      "Bash(curl:*)",
+      "Bash(gh api:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(gh repo view:*)",
+      "Read(//Users/jascen/**)",
+      "Bash(gh pr list:*)",
+      "Bash(tree:*)",
+      "Bash(lsof:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(mkdir:*)",
+      "Bash(chmod:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx next build:*)",
+      "Bash(ls:*)",
+      "Bash(git branch:*)",
+      "Bash(git stash:*)",
+      "Bash(git commit:*)",
+      "Bash(cat:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
