@@ -66,39 +66,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    if (!isLoading) {
-      const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))
-      const isLoginPage = pathname === "/login"
-      const isRegisterPage = pathname === "/register"
-      const isAdminRoute = pathname.startsWith("/admin")
+    // Skip auth checks while loading
+    if (isLoading) {
+      return
+    }
 
-      console.log('[AuthProvider] Auth check:', {
-        isAuthenticated,
-        pathname,
-        user: user?.email
-      })
+    const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))
+    const isLoginPage = pathname === "/login"
+    const isRegisterPage = pathname === "/register"
+    const isAdminRoute = pathname.startsWith("/admin")
 
-      // If not authenticated and not on a public route, redirect to login
-      if (!isAuthenticated && !isPublicRoute) {
-        console.log('[AuthProvider] Not authenticated, redirecting to login')
-        router.replace("/login")
-        return
-      }
+    console.log('[AuthProvider] Auth check:', {
+      isAuthenticated,
+      pathname,
+      user: user?.email,
+      isLoading
+    })
 
-      // If authenticated but not an admin and trying to access admin route, redirect
-      if (isAuthenticated && user?.role !== 'admin' && isAdminRoute) {
-        console.log('[AuthProvider] Non-admin user trying to access admin route')
-        router.replace("/generate")
-        return
-      }
+    // Don't redirect on login/register pages - let login flow handle it
+    if (isLoginPage || isRegisterPage) {
+      console.log('[AuthProvider] On auth page, skipping checks')
+      return
+    }
 
-      // If authenticated and on login/register page, redirect (but let login hook handle immediate redirect)
-      if (isAuthenticated && (isLoginPage || isRegisterPage)) {
-        console.log('[AuthProvider] User authenticated on login/register page, redirecting...')
-        const targetPath = user?.role === 'admin' ? '/admin' : '/generate'
-        router.replace(targetPath)
-        return
-      }
+    // If not authenticated and not on a public route, redirect to login
+    if (!isAuthenticated && !isPublicRoute) {
+      console.log('[AuthProvider] Not authenticated, redirecting to login')
+      router.replace("/login")
+      return
+    }
+
+    // If authenticated but not an admin and trying to access admin route, redirect
+    if (isAuthenticated && user?.role !== 'admin' && isAdminRoute) {
+      console.log('[AuthProvider] Non-admin user trying to access admin route')
+      router.replace("/generate")
+      return
     }
   }, [isLoading, isAuthenticated, user, pathname, router])
 
