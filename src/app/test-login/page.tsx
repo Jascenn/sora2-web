@@ -223,9 +223,9 @@ export default function TestLoginPage() {
             <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
               <li>默认测试账号: admin@sora2.com / admin123</li>
               <li>也可以测试: user@sora2.com / user123</li>
-              <li>点击"测试登录"查看详细的登录响应</li>
-              <li>点击"测试注册"创建新用户</li>
-              <li>点击"检查 Supabase"验证数据库连接</li>
+              <li>点击&quot;测试登录&quot;查看详细的登录响应</li>
+              <li>点击&quot;测试注册&quot;创建新用户</li>
+              <li>点击&quot;检查 Supabase&quot;验证数据库连接</li>
               <li>查看浏览器控制台获取更多调试信息</li>
             </ul>
           </div>
