@@ -93,49 +93,75 @@ export async function POST(request: NextRequest) {
 
     const { email, password, nickname } = validationResult.data
 
-    // Forward to backend API
-    const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3101'
+    // Use Supabase directly (no backend API needed)
+    const { supabaseAdmin } = await import('@/lib/supabase')
+    const bcrypt = await import('bcryptjs')
 
-    const response = await fetch(`${API_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password, nickname }),
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
+    if (!supabaseAdmin) {
       return NextResponse.json(
-        { success: false, error: data.message || data.error || '注册失败' },
-        { status: response.status }
+        { success: false, error: 'Database service unavailable' },
+        { status: 500 }
       )
     }
 
-    // Forward Set-Cookie headers from backend
-    const responseHeaders = new Headers()
-    responseHeaders.set('Content-Type', 'application/json')
+    // Check if user already exists
+    const { data: existingUser } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single()
 
-    const setCookies = response.headers.getSetCookie?.() || []
-    if (setCookies.length > 0) {
-      setCookies.forEach((cookie) => {
-        responseHeaders.append('Set-Cookie', cookie)
-      })
+    if (existingUser) {
+      return NextResponse.json(
+        { success: false, error: '该邮箱已被注册' },
+        { status: 400 }
+      )
     }
+
+    // Hash password
+    const password_hash = await bcrypt.hash(password, 10)
+
+    // Get default signup credits from system config
+    const { data: config } = await supabaseAdmin
+      .from('system_config')
+      .select('value')
+      .eq('key', 'default_signup_credits')
+      .single()
+
+    const defaultCredits = config ? parseInt(config.value) : 100
+
+    // Create user
+    const { data: newUser, error: insertError } = await supabaseAdmin
+      .from('users')
+      .insert({
+        email,
+        password_hash,
+        nickname,
+        credits: defaultCredits,
+        role: 'user',
+        status: 'active',
+      })
+      .select()
+      .single()
+
+    if (insertError) {
+      console.error('Insert error:', insertError)
+      return NextResponse.json(
+        { success: false, error: '创建用户失败' },
+        { status: 500 }
+      )
+    }
+
+    // Return user without password
+    const { password_hash: _, ...userWithoutPassword } = newUser
 
     return NextResponse.json(
       {
         success: true,
-        data: {
-          user: data.data?.user || data.user,
-        },
         message: '注册成功',
+        data: { user: userWithoutPassword },
       },
-      {
-        status: 201,
-        headers: responseHeaders,
-      }
+      { status: 201 }
     )
   } catch (error: any) {
     console.error('Register API error:', error)

@@ -26,7 +26,12 @@
       "Bash(cat:*)",
       "Bash(git rev-parse:*)",
       "Bash(git init:*)",
-      "Bash(git remote add:*)"
+      "Bash(git remote add:*)",
+      "Bash(git rm --cached -r coverage jest.config.js jest.setup.js src/components/__tests__ src/store/__tests__ API_*.md AUTH_*.md DEVELOPMENT.md FIX_* QUICK_START*.md START_HERE_DEPLOYMENT.md SYNC_COMPLETE.md TESTING.md docs website-test-report.html test-website.html debug-network.html diagnose.sh clean-and-start.sh start-dev.sh mock-auth.js)",
+      "Bash(git rm:*)",
+      "Bash(find:*)",
+      "Read(//private/tmp/sora2-web-main/**)",
+      "Bash(npm install:*)"
     ],
     "deny": [],
     "ask": []
