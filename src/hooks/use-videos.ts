@@ -94,21 +94,23 @@ export function useRegenerateVideo() {
 
 /**
  * Download a video
- * TODO: Implement download API endpoint
+ * Downloads the video file to the user's device
+ * Only allows downloading videos owned by the current user
  */
-// export function useDownloadVideo() {
-//   return useMutation({
-//     mutationFn: async (videoId: string) => {
-//       const response = await videoApi.download(videoId)
-//       return response.downloadUrl
-//     },
-//     onSuccess: (downloadUrl) => {
-//       // Trigger download
-//       window.open(downloadUrl, '_blank')
-//       toast.success('下载已开始')
-//     },
-//     onError: (error: any) => {
-//       toast.error(error.response?.data?.error || '下载失败')
-//     },
-//   })
-// }
+export function useDownloadVideo() {
+  return useMutation({
+    mutationFn: async (videoId: string) => {
+      const downloadUrl = await videoApi.download(videoId)
+      return downloadUrl
+    },
+    onSuccess: (downloadUrl) => {
+      // Trigger download by opening the download URL in a new window
+      // The API endpoint will handle authentication and return the file with proper headers
+      window.open(downloadUrl, '_blank')
+      toast.success('下载已开始')
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.error || '下载失败')
+    },
+  })
+}

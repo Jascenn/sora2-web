@@ -1,7 +1,7 @@
 import axios from "axios"
 
-// Development bypass mode - matches backend setting
-const BYPASS_AUTH = process.env.NODE_ENV === 'development'
+// Development bypass mode - controlled by BYPASS_AUTH env var
+const BYPASS_AUTH = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
 
 // Use Next.js API routes directly (no proxy needed)
 const API_URL = '/api'  // All API calls go to Next.js API routes

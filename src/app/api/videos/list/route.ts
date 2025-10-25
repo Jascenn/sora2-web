@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import jwt from 'jsonwebtoken'
 import { z } from 'zod'
 
 // Query parameters validation schema
@@ -9,12 +11,6 @@ const querySchema = z.object({
   sortBy: z.enum(['createdAt', 'updatedAt']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
 })
-
-function getClientIP(request: NextRequest): string {
-  const forwarded = request.headers.get('x-forwarded-for')
-  const realIP = request.headers.get('x-real-ip')
-  return forwarded?.split(',')[0] || realIP || 'unknown'
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,73 +40,89 @@ export async function GET(request: NextRequest) {
 
     const { page, limit, status, sortBy, order } = validationResult.data
 
-    // Get cookies for authentication
-    const cookie = request.headers.get('cookie') || ''
+    // Get JWT token from cookie
+    const token = request.cookies.get('token')?.value
 
-    // Forward to backend API
-    const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3101'
-
-    // Build query string
-    const queryString = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString(),
-      sortBy,
-      order,
-      ...(status && status !== 'all' && { status }),
-    }).toString()
-
-    const response = await fetch(`${API_URL}/api/videos?${queryString}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookie,
-      },
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      // Handle authentication errors
-      if (response.status === 401) {
-        return NextResponse.json(
-          { success: false, error: '未登录或登录已过期,请重新登录' },
-          { status: 401 }
-        )
-      }
-
+    if (!token) {
       return NextResponse.json(
-        { success: false, error: data.message || data.error || '获取视频列表失败' },
-        { status: response.status }
+        { success: false, error: '未登录或登录已过期,请重新登录' },
+        { status: 401 }
       )
     }
 
-    // Return standardized response
+    // Verify JWT token
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key')
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, error: '登录已过期,请重新登录' },
+        { status: 401 }
+      )
+    }
+
+    const userId = decoded.userId
+    const userRole = decoded.role
+
+    // Build query
+    let query = supabaseAdmin
+      .from('videos')
+      .select('*', { count: 'exact' })
+
+    // Filter by user (non-admin users can only see their own videos)
+    if (userRole !== 'admin') {
+      query = query.eq('user_id', userId)
+    }
+
+    // Filter by status
+    if (status && status !== 'all') {
+      query = query.eq('status', status)
+    }
+
+    // Filter out soft-deleted videos
+    query = query.is('deleted_at', null)
+
+    // Sort
+    const sortColumn = sortBy === 'createdAt' ? 'created_at' : 'updated_at'
+    query = query.order(sortColumn, { ascending: order === 'asc' })
+
+    // Pagination
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+    query = query.range(from, to)
+
+    // Execute query
+    const { data: videos, error, count } = await query
+
+    if (error) {
+      console.error('Query videos error:', error)
+      return NextResponse.json(
+        { success: false, error: '获取视频列表失败' },
+        { status: 500 }
+      )
+    }
+
+    // Calculate pagination
+    const totalPages = count ? Math.ceil(count / limit) : 0
+
     return NextResponse.json(
       {
         success: true,
         data: {
-          videos: data.data?.videos || data.videos || [],
+          videos: videos || [],
           pagination: {
-            page: data.data?.pagination?.page || page,
-            limit: data.data?.pagination?.limit || limit,
-            total: data.data?.pagination?.total || 0,
-            totalPages: data.data?.pagination?.totalPages || 0,
+            page,
+            limit,
+            total: count || 0,
+            totalPages,
+            hasMore: page < totalPages,
           },
         },
-        message: '获取成功',
       },
       { status: 200 }
     )
   } catch (error: any) {
     console.error('Videos list API error:', error)
-
-    // Handle network errors
-    if (error.code === 'ECONNREFUSED') {
-      return NextResponse.json(
-        { success: false, error: '服务暂时不可用,请稍后重试' },
-        { status: 503 }
-      )
-    }
 
     return NextResponse.json(
       { success: false, error: error.message || '获取视频列表失败,请稍后重试' },
@@ -119,57 +131,113 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Support POST for complex filters (future enhancement)
+// Search endpoint
+const searchSchema = z.object({
+  q: z.string().min(1, '搜索关键词不能为空'),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(20),
+})
+
 export async function POST(request: NextRequest) {
   try {
-    // Get cookies for authentication
-    const cookie = request.headers.get('cookie') || ''
-
-    // Parse request body
     const body = await request.json()
-    const { page = 1, limit = 20, filters = {} } = body
 
-    // Forward to backend API
-    const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3101'
+    // Validate search parameters
+    const validationResult = searchSchema.safeParse(body)
 
-    const response = await fetch(`${API_URL}/api/videos/search`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookie,
-      },
-      body: JSON.stringify({ page, limit, filters }),
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        return NextResponse.json(
-          { success: false, error: '未登录或登录已过期,请重新登录' },
-          { status: 401 }
-        )
-      }
-
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map((err) => ({
+        field: err.path.join('.'),
+        message: err.message,
+      }))
       return NextResponse.json(
-        { success: false, error: data.message || data.error || '搜索视频失败' },
-        { status: response.status }
+        { success: false, error: '请求参数验证失败', details: errors },
+        { status: 400 }
       )
     }
+
+    const { q, page, limit } = validationResult.data
+
+    // Get JWT token from cookie
+    const token = request.cookies.get('token')?.value
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: '未登录或登录已过期,请重新登录' },
+        { status: 401 }
+      )
+    }
+
+    // Verify JWT token
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key')
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, error: '登录已过期,请重新登录' },
+        { status: 401 }
+      )
+    }
+
+    const userId = decoded.userId
+    const userRole = decoded.role
+
+    // Build search query
+    let query = supabaseAdmin
+      .from('videos')
+      .select('*', { count: 'exact' })
+      .ilike('prompt', `%${q}%`)
+
+    // Filter by user (non-admin users can only see their own videos)
+    if (userRole !== 'admin') {
+      query = query.eq('user_id', userId)
+    }
+
+    // Filter out soft-deleted videos
+    query = query.is('deleted_at', null)
+
+    // Sort by relevance (created_at desc)
+    query = query.order('created_at', { ascending: false })
+
+    // Pagination
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+    query = query.range(from, to)
+
+    // Execute query
+    const { data: videos, error, count } = await query
+
+    if (error) {
+      console.error('Search videos error:', error)
+      return NextResponse.json(
+        { success: false, error: '搜索视频失败' },
+        { status: 500 }
+      )
+    }
+
+    // Calculate pagination
+    const totalPages = count ? Math.ceil(count / limit) : 0
 
     return NextResponse.json(
       {
         success: true,
         data: {
-          videos: data.data?.videos || data.videos || [],
-          pagination: data.data?.pagination || {},
+          videos: videos || [],
+          pagination: {
+            page,
+            limit,
+            total: count || 0,
+            totalPages,
+            hasMore: page < totalPages,
+          },
+          query: q,
         },
-        message: '搜索成功',
       },
       { status: 200 }
     )
   } catch (error: any) {
     console.error('Videos search API error:', error)
+
     return NextResponse.json(
       { success: false, error: error.message || '搜索视频失败,请稍后重试' },
       { status: 500 }

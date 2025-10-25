@@ -44,6 +44,12 @@ export const videoApi = {
     const response = await api.post(`/videos/${id}/regenerate`)
     return response.data.data || response.data
   },
+
+  async download(id: string) {
+    // Returns the download URL endpoint
+    // The actual download will be triggered by opening this URL
+    return `/api/videos/${id}/download`
+  },
 }
 
 export const generateVideo = async (url: string, options: {

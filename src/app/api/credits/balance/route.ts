@@ -1,55 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase'
+import jwt from 'jsonwebtoken'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get cookies for authentication
-    const cookie = request.headers.get('cookie') || ''
+    // Get JWT token from cookie
+    const token = request.cookies.get('token')?.value
 
-    if (!cookie) {
+    if (!token) {
       return NextResponse.json(
         { success: false, error: '未登录,请先登录' },
         { status: 401 }
       )
     }
 
-    // Forward to backend API
-    const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3101'
-
-    const response = await fetch(`${API_URL}/api/credits/balance`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Cookie': cookie,
-      },
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      // Handle authentication errors
-      if (response.status === 401) {
-        return NextResponse.json(
-          { success: false, error: '未登录或登录已过期,请重新登录' },
-          { status: 401 }
-        )
-      }
-
+    // Verify JWT token
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret-key')
+    } catch (error) {
       return NextResponse.json(
-        { success: false, error: data.message || data.error || '获取积分余额失败' },
-        { status: response.status }
+        { success: false, error: '登录已过期,请重新登录' },
+        { status: 401 }
       )
     }
 
-    // Return standardized response
+    const userId = decoded.userId
+
+    // Query user credits from Supabase
+    const { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select('id, email, credits')
+      .eq('id', userId)
+      .single()
+
+    if (error || !user) {
+      console.error('Query user credits error:', error)
+      return NextResponse.json(
+        { success: false, error: '获取用户信息失败' },
+        { status: 500 }
+      )
+    }
+
+    // Return credits balance
     return NextResponse.json(
       {
         success: true,
         data: {
-          balance: data.data?.balance ?? data.balance ?? 0,
-          currency: data.data?.currency || data.currency || 'credits',
-          userId: data.data?.userId || data.userId,
+          balance: user.credits || 0,
+          currency: 'credits',
+          userId: user.id,
         },
         message: '获取成功',
       },
@@ -57,14 +59,6 @@ export async function GET(request: NextRequest) {
     )
   } catch (error: any) {
     console.error('Credits balance API error:', error)
-
-    // Handle network errors
-    if (error.code === 'ECONNREFUSED') {
-      return NextResponse.json(
-        { success: false, error: '服务暂时不可用,请稍后重试' },
-        { status: 503 }
-      )
-    }
 
     return NextResponse.json(
       { success: false, error: error.message || '获取积分余额失败,请稍后重试' },

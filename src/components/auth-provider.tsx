@@ -5,11 +5,11 @@ import { useAuthStore } from "@/store/auth.store"
 import { authApi } from "@/lib/auth"
 import { usePathname, useRouter } from "next/navigation"
 
-// Temporary bypass login for development
-const BYPASS_LOGIN = process.env.NODE_ENV === 'development'
+// Temporary bypass login for development (controlled by BYPASS_AUTH env var)
+const BYPASS_LOGIN = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
 
 // List of routes that are publicly accessible
-const publicRoutes = ["/login", "/register"]
+const publicRoutes = ["/", "/login", "/register", "/gallery", "/terms", "/privacy", "/forgot-password"]
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, setUser, setLoading, isLoading } = useAuthStore()
@@ -68,15 +68,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (!isLoading) {
-      const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
+      const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))
+      const isLoginPage = pathname === "/login"
       const isAdminRoute = pathname.startsWith("/admin")
 
+      // If authenticated and on login page, redirect to appropriate page
+      if (isAuthenticated && isLoginPage) {
+        if (user?.role === 'admin') {
+          router.push("/admin")
+        } else {
+          router.push("/generate")
+        }
+        return
+      }
+
+      // If not authenticated and not on a public route, redirect to login
       if (!isAuthenticated && !isPublicRoute) {
-        // If not authenticated and not on a public route, redirect to login
         router.push("/login")
-      } else if (isAuthenticated && user?.role !== 'admin' && isAdminRoute) {
-        // If authenticated but not an admin and trying to access admin route, redirect
-        router.push("/profile")
+        return
+      }
+
+      // If authenticated but not an admin and trying to access admin route, redirect
+      if (isAuthenticated && user?.role !== 'admin' && isAdminRoute) {
+        router.push("/generate")
       }
     }
   }, [isLoading, isAuthenticated, user, pathname, router])

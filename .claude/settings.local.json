@@ -38,7 +38,12 @@
       "Bash(vercel env:*)",
       "Bash(vercel:*)",
       "Bash(pbcopy)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(gh auth status:*)",
+      "Bash(python3:*)",
+      "Bash(git log:*)",
+      "Bash(node test-db-connection.js:*)",
+      "Bash(node test-api-endpoints.js:*)"
     ],
     "deny": [],
     "ask": []

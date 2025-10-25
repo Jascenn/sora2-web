@@ -101,8 +101,8 @@ const secureStorage = {
   },
 }
 
-// Temporary bypass login for development
-const BYPASS_LOGIN = process.env.NODE_ENV === 'development'
+// Temporary bypass login for development (controlled by BYPASS_AUTH env var)
+const BYPASS_LOGIN = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
 
 export const useAuthStore = create<AuthStore>()(
   persist(
