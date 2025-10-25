@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken'
 export const dynamic = 'force-dynamic'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key'
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
+const JWT_EXPIRES_IN = String(process.env.JWT_EXPIRES_IN || '7d').trim()
 
 export async function POST(request: NextRequest) {
   try {

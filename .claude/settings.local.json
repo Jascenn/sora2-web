@@ -31,7 +31,14 @@
       "Bash(git rm:*)",
       "Bash(find:*)",
       "Read(//private/tmp/sora2-web-main/**)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(open:*)",
+      "Bash(vercel whoami:*)",
+      "Bash(./add-vercel-env.sh:*)",
+      "Bash(vercel env:*)",
+      "Bash(vercel:*)",
+      "Bash(pbcopy)",
+      "Bash(node -e:*)"
     ],
     "deny": [],
     "ask": []
