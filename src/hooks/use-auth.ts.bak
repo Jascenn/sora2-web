@@ -39,7 +39,7 @@ export function useLogin() {
       // Use full page reload to ensure middleware runs
       window.location.href = targetPath
     },
-    onError: (error: any) => {
+    onError: (error: any) {
       const message = error.response?.data?.error || '登录失败，请检查邮箱和密码'
       toast.error(message)
     },

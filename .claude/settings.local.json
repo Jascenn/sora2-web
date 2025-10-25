@@ -44,7 +44,8 @@
       "Bash(git log:*)",
       "Bash(node test-db-connection.js:*)",
       "Bash(node test-api-endpoints.js:*)",
-      "Bash(mcp list-tools:*)"
+      "Bash(mcp list-tools:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []
