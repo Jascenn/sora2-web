@@ -74,9 +74,7 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#667eea" />
         <meta name="msapplication-tap-highlight" content="no" />
 
-        {/* Performance optimization */}
-        <link rel="preconnect" href="http://localhost:3101" />
-        <link rel="dns-prefetch" href="http://localhost:3101" />
+        {/* Performance optimization - removed hardcoded localhost */}
       </head>
       <body className={inter.className}>
         <Providers>{children}</Providers>
