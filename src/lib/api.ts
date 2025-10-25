@@ -3,10 +3,8 @@ import axios from "axios"
 // Development bypass mode - matches backend setting
 const BYPASS_AUTH = process.env.NODE_ENV === 'development'
 
-// Use Next.js API route as proxy in development to avoid proxy issues
-const API_URL = typeof window !== 'undefined'
-  ? '/api/proxy'  // Client-side: use Next.js API route
-  : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3101") + '/api'  // Server-side: direct connection
+// Use Next.js API routes directly (no proxy needed)
+const API_URL = '/api'  // All API calls go to Next.js API routes
 
 if (BYPASS_AUTH && typeof window !== 'undefined') {
   console.log('🔓 Development Mode: Authentication bypass enabled')
