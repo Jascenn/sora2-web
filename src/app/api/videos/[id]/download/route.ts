@@ -116,6 +116,8 @@ export async function GET(
     // Log download activity (non-blocking)
     const logDownload = async () => {
       try {
+        if (!supabaseAdmin) return
+
         // You can add download tracking to metadata or create a separate downloads table
         const currentMetadata = video.metadata || {}
         const downloads = (currentMetadata.downloads || 0) + 1

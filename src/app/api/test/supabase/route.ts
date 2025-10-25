@@ -46,16 +46,16 @@ export async function GET() {
         users: {
           count: users?.length || 0,
           data: users || [],
-          error: usersError ? usersError.message : null,
+          error: null,
         },
         config: {
           count: config?.length || 0,
           data: config || [],
-          error: configError ? configError.message : null,
+          error: configError ? (configError as any).message : null,
         },
         tables: {
-          available: tableInfo?.map(t => t.table_name) || [],
-          error: tableError ? tableError.message : null,
+          available: tableInfo?.map((t: any) => t.table_name) || [],
+          error: tableError ? (tableError as any).message : null,
         },
       },
       env: {

@@ -64,6 +64,13 @@ export async function GET(request: NextRequest) {
     const userId = decoded.userId
     const userRole = decoded.role
 
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, error: '服务器配置错误' },
+        { status: 500 }
+      )
+    }
+
     // Build query
     let query = supabaseAdmin
       .from('videos')
@@ -181,6 +188,13 @@ export async function POST(request: NextRequest) {
 
     const userId = decoded.userId
     const userRole = decoded.role
+
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, error: '服务器配置错误' },
+        { status: 500 }
+      )
+    }
 
     // Build search query
     let query = supabaseAdmin

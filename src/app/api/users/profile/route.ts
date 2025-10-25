@@ -38,6 +38,13 @@ export async function GET(request: NextRequest) {
 
     const userId = decoded.userId
 
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { success: false, error: '服务器配置错误' },
+        { status: 500 }
+      )
+    }
+
     // Query user from Supabase
     const { data: user, error } = await supabaseAdmin
       .from('users')
