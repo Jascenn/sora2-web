@@ -111,7 +111,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [isLoading, isAuthenticated, user, pathname, router])
 
 
-  if (isLoading) {
+  // Show loading while hydrating or checking auth
+  if (!_hasHydrated || isLoading) {
     // You can return a global loading spinner here
     return (
       <div className="flex h-screen w-full items-center justify-center">
