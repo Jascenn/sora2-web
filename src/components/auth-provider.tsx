@@ -24,42 +24,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const checkUser = async () => {
-      // If we already have a user from persisted state, trust it for a moment
-      // but revalidate in the background.
-      if (isAuthenticated) {
-        setLoading(false)
-        // Revalidate user data
-        authApi.getProfile().then(response => {
-          if (response.user) {
-            setUser(response.user)
-          } else {
-            setUser(null)
-          }
-        }).catch(() => {
-          setUser(null)
-        })
-        return
-      }
+      setLoading(true)
 
       try {
-        // Try to get user profile from the server using the httpOnly cookie
+        // Always check with server using the httpOnly cookie
         const response = await authApi.getProfile()
-        if (response.user) {
+        console.log('[AuthProvider] Profile check response:', response)
+
+        if (response && response.user) {
+          console.log('[AuthProvider] Setting user:', response.user.email)
           setUser(response.user)
         } else {
-          // No user from API, ensure we are logged out
+          console.log('[AuthProvider] No user found, logging out')
           setUser(null)
-          setLoading(false)
         }
       } catch (error) {
+        console.log('[AuthProvider] Profile check failed, not authenticated:', error)
         // Error fetching profile, means we are not authenticated
         setUser(null)
+      } finally {
         setLoading(false)
       }
     }
 
     checkUser()
-  }, [isAuthenticated, setUser, setLoading])
+  }, [])
 
   useEffect(() => {
     // Skip auth checks in development mode

@@ -75,9 +75,15 @@ export const authApi = {
     await api.post("/auth/logout")
   },
 
-  async getProfile(): Promise<AuthResponse> {
+  async getProfile(): Promise<any> {
+    console.log('[authApi] Fetching profile')
     const response = await api.get("/users/profile")
-    return response.data.data?.user || response.data.user
+    console.log('[authApi] Profile API response:', response.data)
+
+    // The API returns { success: true, data: { user: {...} } }
+    const user = response.data.data?.user || response.data.user || response.data.data
+    console.log('[authApi] Extracted user:', user)
+    return { user }
   },
 
   async refreshToken() {
